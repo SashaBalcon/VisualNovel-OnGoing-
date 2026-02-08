@@ -1,0 +1,214 @@
+import pygame
+import sys
+import os
+
+from .yes_or_no_McRonalds import YesOrNo
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from template import Template
+from save_system.save_data import UpdateDay1Flags, UpdateScene, UpdateTextIdx
+from save_system.save_ui import SaveUI
+from game_state import game_state
+from print_text import SlowText
+
+class C1C2(Template):
+    def __init__(self, screen, text_idx = 0, friendship = None, general_flags = None, day1_flags = None):
+        self.screen = screen
+
+        #save system updates
+        UpdateScene('C1C2')
+        UpdateDay1Flags('stay_home_meal', 'McRonalds')
+
+        super().__init__()
+
+        self.scene3_bg = pygame.image.load('day1/day1_anime/night.png').convert_alpha()
+        self.scene3_bg = pygame.transform.smoothscale(self.scene3_bg, (self.screen_width, self.screen_height))
+
+        self.new_bg = pygame.image.load('day1/day1_anime/mcronalds.png').convert_alpha()
+        self.new_bg = pygame.transform.smoothscale(self.new_bg, (self.screen_width, self.screen_height))
+
+        self.mary = pygame.image.load('day1/day1_anime/mary.png').convert_alpha()
+
+        original_rect = self.mary.get_rect()
+        desired_width = 1500
+        aspect_ratio = original_rect.height / original_rect.width
+        desired_height = int(desired_width * aspect_ratio)
+
+        self.mary = pygame.transform.smoothscale(self.mary, (desired_width, desired_height))
+        self.show_mary = False
+
+        self.delay = 1500
+        self.delay2 = 2000
+
+        self.text_idx = text_idx
+        self.text_funcs = [self.text1, self.text2, self.text3, self.text4, self.text5]
+
+        self.start_time = pygame.time.get_ticks()
+        self.popup_visible = False
+
+        self.clock = pygame.time.Clock()
+
+        self.text_funcs[self.text_idx]()
+        self.run()
+
+    def text1(self):
+        text = "(After a long day, your stomach's begging for food. You hop in your car and make the short drive to McRonalds. Traffic's annoying, and parking takes a few minutes, but eventually, you find a spot and head inside.)"
+
+        #save system updates
+        UpdateTextIdx(self.text_idx)
+
+        self.slow_text = SlowText(text, pos=(self.text_bar_rect.x + 20, self.text_bar_rect.y + 10), line_length=self.text_bar_rect.width - 40)
+        self.text_idx += 1
+        self.add_to_back_log(text)
+
+    
+    def text2(self):
+        text = "(McRonalds is packed. You wait in line, get your food, and spend what feels like an hour weaving, waiting for a table to open up. You sit down and start unwrapping your food.)"
+
+        #save system updates
+        UpdateTextIdx(self.text_idx)
+        
+        self.slow_text = SlowText(text, pos=(self.text_bar_rect.x + 20, self.text_bar_rect.y + 10), line_length=self.text_bar_rect.width - 40)
+        self.text_idx += 1
+        self.add_to_back_log(text)
+    
+    def text3(self):
+        text = "(Just as you spot a table, someone calls out.)"
+
+        #save system updates
+        UpdateTextIdx(self.text_idx)
+        
+        self.slow_text = SlowText(text, pos=(self.text_bar_rect.x + 20, self.text_bar_rect.y + 10), line_length=self.text_bar_rect.width - 40)
+        self.text_idx += 1
+        self.add_to_back_log(text)
+
+    def text4(self):
+        text = "??? : Can I join you? Everywhere else is crowded."
+
+        #save system updates
+        UpdateTextIdx(self.text_idx)
+        
+        self.slow_text = SlowText(text, pos=(self.text_bar_rect.x + 20, self.text_bar_rect.y + 10), line_length=self.text_bar_rect.width - 40, colored = (255, 182, 193))
+        self.text_idx += 1
+        self.add_to_back_log(text, color = (255, 182, 193))
+
+    def text5(self):
+        text = "(You turn. A young woman is behind you—closer than expected, smiling softly.)"
+
+
+        self.slow_text = SlowText(text, pos=(self.text_bar_rect.x + 20, self.text_bar_rect.y + 10), line_length=self.text_bar_rect.width - 40)
+        self.text_idx += 1
+        self.add_to_back_log(text)
+        self.show_mary = True
+
+    def run(self):
+        running = True
+
+        text_run = True
+        text_pressed = False
+        log_show = False
+        self.text_fully_rendered = False
+
+        while running:
+            self.screen.blit(self.new_bg, (0,0 ))
+            mouse = pygame.mouse.get_pos()
+
+            current_time = pygame.time.get_ticks()
+            elapsed = current_time - self.start_time
+            
+            #see if you should run everything yet or if it's still loading
+            if elapsed > self.delay:
+                self.available = True
+            else:
+                self.available = False
+
+            if self.available:
+
+                if self.show_mary:
+                    mary_rect = self.mary.get_rect()
+                    mary_rect.midbottom= ((self.screen_width // 2) - 150, self.screen_height)
+                    self.screen.blit(self.mary, mary_rect)
+
+                #draw button and text bar ui
+                self.draw_buttons()
+                
+                #words
+                if elapsed > self.delay2 and text_run:
+                    self.slow_text.update()
+                    self.slow_text.Draw(self.screen)
+                if self.text_idx >= len(self.slow_text.text):  
+                    self.text_fully_rendered = True
+                    text_run = False
+                
+                #if space bar has been pressed or text bar has been clicked move on to the next line...
+                if text_pressed:
+                    if self.text_idx < len(self.text_funcs):
+                        self.text_funcs[self.text_idx]() 
+                        text_run = True
+                    else:
+                        YesOrNo(self.screen)
+                    text_pressed = False
+
+                if log_show:
+                    pygame.draw.rect(self.screen, self.button_color, self.popup)
+                    self.back_log_hist()
+                    pygame.draw.rect(self.screen, self.button_color2, self.mini_x)
+                    self.screen.blit(self.x, self.x_text_rect)
+
+                #popup
+            if self.popup_visible:
+                pygame.draw.rect(self.screen, self.button_color, self.popup)
+                pygame.draw.rect(self.screen, self.button_color2, self.mini_x)
+                self.screen.blit(self.x, self.x_text_rect)
+
+                #exit button
+                pygame.draw.rect(self.screen, self.button_color2, self.button_rect)
+                self.screen.blit(self.quit_button, self.text_rect_button)
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+                #If the space key is pressed down skip dailougue loading
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        if not self.text_fully_rendered:
+                            self.slow_text.UpdateFast()
+                            self.text_fully_rendered = True
+                        else:
+                            text_pressed = True
+                            text_run = True
+                            self.text_fully_rendered = False
+                            
+                    #unfull screen mode
+                    if event.key in (pygame.K_F11, pygame.K_ESCAPE):
+                        game_state.toggle_fullscreen()
+                        self.screen = game_state.screen
+                        self.width, self.height = game_state.width, game_state.height
+
+                if event.type == pygame.MOUSEBUTTONDOWN:
+
+                #If the text_box is pressed down skip dailougue loading
+                    if self.text_bar_rect.collidepoint(mouse):
+                        if not self.text_fully_rendered:
+                            self.slow_text.UpdateFast()
+                            self.text_fully_rendered = True
+                        else:
+                            text_pressed = True
+                            text_run = True
+                            self.text_fully_rendered = False
+
+                    #save button instructions
+                    if self.save_rect.collidepoint(mouse):
+                        previous_scene = 'C1C2'
+                        save_screen = SaveUI(self.screen, previous_scene, self.text_idx, 1)
+                        save_screen.run()
+
+                    #run rest of collide instructions
+                    self.collide_instructions(event, mouse)
+
+
+            self.clock.tick(60)
+            pygame.display.flip()
+            

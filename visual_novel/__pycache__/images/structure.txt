@@ -1,0 +1,28 @@
+visual_novel/
+├── main.py                    
+├── scene1.py                
+├── template.py                            
+│
+├── Fonts/               
+│   ├── ArchitectsDaughter-Regular.tff                   
+│   |__ SendFlowers-Regular.tff      
+│ 
+├── images/
+│   ├── images outside of day1
+│ 
+├── main_menu/
+│   ├── settings.py
+│   ├──start_game.py
+│   ├──start_options.py
+│   ├──style.py
+│
+├── day1/
+│   ├── day1_anime
+│       ├── includes animations and pictures for day1
+│   ├── other button options and story options
+
+
+
+
+
+

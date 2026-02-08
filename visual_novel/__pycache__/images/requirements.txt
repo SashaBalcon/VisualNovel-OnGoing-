@@ -1,0 +1,9 @@
+----------------------------
+Libraries
+----------------------------
+For this project, I used:
+
+sys
+os
+tkinker
+pygame
